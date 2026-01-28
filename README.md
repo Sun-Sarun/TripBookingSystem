@@ -2,7 +2,7 @@
 ## Database desing reference:
 [How to Develop an Online Event Booking System Using PHP & MySQL ](https://dev.to/rakeebmkhan/how-to-develop-an-online-event-booking-system-using-php-mysql-3b4p)
 ## Project reference:
-[Trip.com](https://www.trip.com/)
+[Trip.com](https://www.trip.com/)\
 [Booking.com](https://www.booking.com/)
 ## Used Themplate
 ### Landing Page
