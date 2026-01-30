@@ -1,26 +1,28 @@
 <?php
 session_start();
-// 1. Database Connection
 require_once '../admin/config.php'; 
 
-// --- REMOVE FUNCTION LOGIC ---
+// --- 1. REMOVE FUNCTION LOGIC ---
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['remove_id'])) {
     $removeID = $_POST['remove_id'];
     if (isset($_SESSION['cart'][$removeID])) {
         unset($_SESSION['cart'][$removeID]);
     }
-    header("Location: checkOut.php");
+    header("Location: checkoutComplete.php");
     exit();
 }
 
-// 2. Initialize Cart Data from Session
+// --- 2. INITIALIZE & CALCULATE ---
 $cart = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
-
-// 3. Calculate Totals
 $subtotal = 0;
+
 foreach ($cart as $item) {
-    // Subtotal = price * unit (quantity)
-    $subtotal += $item['price'] * $item['quantity'];
+    // SECURITY: Clean the price to ensure it's a number (strips '$' and ',')
+    $cleanPrice = str_replace(['$', ','], '', $item['price']);
+    $itemPrice = (float)$cleanPrice;
+    $itemQty = (int)($item['quantity'] ?? 1);
+
+    $subtotal += ($itemPrice * $itemQty);
 }
 
 $serviceFee = ($subtotal > 0) ? 45.00 : 0;
@@ -70,7 +72,7 @@ $total = $subtotal + $serviceFee;
                         <div class="w-full md:w-48 h-36 rounded-3xl overflow-hidden shrink-0">
                             <?php 
                                 $photo = $item['photo'];
-                                $imageSrc = (filter_var($photo, FILTER_VALIDATE_URL)) ? $photo : "uploads/" . htmlspecialchars($photo);
+                                $imageSrc = (filter_var($photo, FILTER_VALIDATE_URL)) ? $photo : "../database/imgs/" . htmlspecialchars($photo);
                             ?>
                             <img src="<?= $imageSrc ?>" class="w-full h-full object-cover">
                         </div>

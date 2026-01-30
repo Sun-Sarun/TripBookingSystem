@@ -1,30 +1,37 @@
 <?php
 session_start();
-// 1. Database Connection
 require_once '../admin/config.php'; 
 
-// Check if user is logged in
 $isLoggedIn = isset($_SESSION['accountID']);
-$profilePic = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'; // Default placeholder
+$profilePic = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'; 
 $userEmail = '';
 
 if ($isLoggedIn) {
+    // Use a prepared statement to prevent SQL Injection
     $accID = $_SESSION['accountID'];
-    // Fetch profile picture and email from userinfo table
-    $userQuery = "SELECT profile, email FROM userinfo WHERE accountID = '$accID'";
-    $userResult = mysqli_query($conn, $userQuery);
     
-    if ($userResult && $userData = mysqli_fetch_assoc($userResult)) {
+    // FIX: JOIN account and userinfo because email is in account table
+    $userQuery = "SELECT u.profile, a.email 
+                  FROM userinfo u 
+                  INNER JOIN account a ON u.accountID = a.accountID 
+                  WHERE a.accountID = ?";
+    
+    $stmt = mysqli_prepare($conn, $userQuery);
+    mysqli_stmt_bind_param($stmt, "i", $accID);
+    mysqli_stmt_execute($stmt);
+    $userResult = mysqli_stmt_get_result($stmt);
+    
+    if ($userData = mysqli_fetch_assoc($userResult)) {
         $userEmail = $userData['email'];
         if (!empty($userData['profile'])) {
             $profilePic = (filter_var($userData['profile'], FILTER_VALIDATE_URL)) 
                           ? $userData['profile'] 
-                          : "uploads/profile/" . htmlspecialchars($userData['profile']);
+                          : "../database/imgs/" . htmlspecialchars($userData['profile']);
         }
     }
 }
 
-// 2. Updated Query: Join 'spot' with 'address' to get location data
+// 2. Spot Query (This part was mostly correct, but using a join is good practice)
 $query = "SELECT s.*, a.country, a.province 
           FROM spot s 
           INNER JOIN address a ON s.addressID = a.addressID 
@@ -178,14 +185,31 @@ $result = mysqli_query($conn, $query);
                         $statusClass = $isAvailable ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
                     ?>
                         <div class="spot-card flex flex-col">
-                            <div class="relative h-56 overflow-hidden">
-                                <img src="<?= $row['photo'] ? htmlspecialchars($row['photo']) : 'https://via.placeholder.com/400x300' ?>" 
-                                     alt="<?= htmlspecialchars($row['name']) ?>" 
-                                     class="w-full h-full object-cover">
-                                <span class="absolute top-4 right-4 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm <?= $statusClass ?>">
-                                    <?= $status ?>
-                                </span>
-                            </div>
+                           <div class="relative h-56 overflow-hidden">
+    <?php 
+        // 1. Check if photo exists in DB
+        $photoPath = $row['photo'];
+        
+        // 2. Determine the correct source URL
+        if (empty($photoPath)) {
+            $displayImg = 'https://via.placeholder.com/400x300';
+        } elseif (filter_var($photoPath, FILTER_VALIDATE_URL)) {
+            // It's a full URL (e.g., https://...)
+            $displayImg = $photoPath;
+        } else {
+            // It's a local file name, prepend your image directory
+            $displayImg = "../database/imgs/" . htmlspecialchars($photoPath);
+        }
+    ?>
+    
+    <img src="<?= $displayImg ?>" 
+         alt="<?= htmlspecialchars($row['name']) ?>" 
+         class="w-full h-full object-cover">
+         
+    <span class="absolute top-4 right-4 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm <?= $statusClass ?>">
+        <?= htmlspecialchars($row['status']) ?>
+    </span>
+</div>
                             
                             <div class="p-6 flex-1 flex flex-col">
                                 <div class="flex justify-between items-start mb-2">
@@ -203,7 +227,7 @@ $result = mysqli_query($conn, $query);
                                     </div>
                                     
                                     <?php if ($isAvailable): ?>
-                                        <a href="booking.php?id=<?= $row['spotID'] ?>" class="bg-brand text-white px-5 py-2.5 rounded-xl font-bold shadow-md hover:bg-blue-600 transition-all">
+                                        <a href="productDetail.php?id=<?= $row['spotID'] ?>" class="bg-brand text-white px-5 py-2.5 rounded-xl font-bold shadow-md hover:bg-blue-600 transition-all">
                                             Book Now
                                         </a>
                                     <?php else: ?>

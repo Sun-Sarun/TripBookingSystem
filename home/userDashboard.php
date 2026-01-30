@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         $profileName = $_POST['current_profile']; 
         if (!empty($_FILES['profile_img']['name'])) {
-            $targetDir = "../uploads/profile/"; 
+            $targetDir = "../database/imgs/"; 
             if (!is_dir($targetDir)) mkdir($targetDir, 0777, true);
             $profileName = time() . "_" . basename($_FILES['profile_img']['name']);
             move_uploaded_file($_FILES['profile_img']['tmp_name'], $targetDir . $profileName);
@@ -93,8 +93,8 @@ if (!empty($user['profile'])) {
     } else {
         // If it's a filename, check multiple possible local paths
         $paths = [
-            "uploads/profile/" . $user['profile'], 
-            "../uploads/profile/" . $user['profile']
+            "../database/imgs/" . $user['profile'], 
+            "../database/imgs/" . $user['profile']
         ];
         
         foreach ($paths as $p) {
@@ -219,7 +219,7 @@ if (!empty($user['profile'])) {
                     <?php while($row = mysqli_fetch_assoc($bookingResult)): ?>
                         <div class="bg-white p-6 rounded-[2.5rem] border border-slate-100 flex flex-col md:flex-row gap-8 hover:shadow-xl transition-all group">
                             <div class="md:w-56 h-40 relative flex-shrink-0">
-                                <img src="<?= (filter_var($row['photo'], FILTER_VALIDATE_URL)) ? $row['photo'] : (file_exists('uploads/'.$row['photo']) ? 'uploads/'.$row['photo'] : '../uploads/'.$row['photo']) ?>"
+                                <img src="<?= (filter_var($row['photo'], FILTER_VALIDATE_URL)) ? $row['photo'] : (file_exists('../database/imgs/'.$row['photo']) ? '../database/imgs/'.$row['photo'] : '../database/imgs/'.$row['photo']) ?>"
                                      class="w-full h-full object-cover rounded-[1.5rem] bg-slate-100"
                                      onerror="this.src='https://placehold.co/600x400?text=No+Image'">
                                 <div class="absolute top-3 left-3 bg-white/90 backdrop-blur px-3 py-1 rounded-lg text-[10px] font-black text-brand uppercase tracking-tighter">Stay</div>

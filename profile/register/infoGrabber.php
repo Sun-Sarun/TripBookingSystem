@@ -4,7 +4,7 @@ include '../../admin/config.php'; // Ensure this defines $conn
 
 // Redirect back if they haven't come from the registration page
 if (!isset($_SESSION['user_email'])) {
-    header("Location: index.php");
+    header("Location: ../../home/index.php");
     exit();
 }
 

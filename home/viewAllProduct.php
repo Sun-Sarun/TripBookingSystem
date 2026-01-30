@@ -2,52 +2,60 @@
 session_start();
 require_once '../admin/config.php'; 
 
-// Check if user is logged in for the header
+// 1. Authenticated User Data Logic
 $isLoggedIn = isset($_SESSION['accountID']);
 $profilePic = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'; 
+$userEmail = '';
 
 if ($isLoggedIn) {
     $accID = $_SESSION['accountID'];
-    $userQuery = "SELECT profile FROM userinfo WHERE accountID = '$accID'";
-    $userResult = mysqli_query($conn, $userQuery);
-    if ($userResult && $userData = mysqli_fetch_assoc($userResult)) {
+    // FIX: Join account table to get email
+    $userQuery = "SELECT u.profile, a.email 
+                  FROM userinfo u 
+                  INNER JOIN account a ON u.accountID = a.accountID 
+                  WHERE a.accountID = ?";
+    
+    $stmt = mysqli_prepare($conn, $userQuery);
+    mysqli_stmt_bind_param($stmt, "i", $accID);
+    mysqli_stmt_execute($stmt);
+    $userResult = mysqli_stmt_get_result($stmt);
+    
+    if ($userData = mysqli_fetch_assoc($userResult)) {
+        $userEmail = $userData['email'];
         if (!empty($userData['profile'])) {
+            // Updated path to match your file structure logic
             $profilePic = (filter_var($userData['profile'], FILTER_VALIDATE_URL)) 
                           ? $userData['profile'] 
-                          : "uploads/profile/" . htmlspecialchars($userData['profile']);
+                          : "../database/imgs/" . htmlspecialchars($userData['profile']);
         }
     }
 }
 
-// 1. Capture Filters
+// 2. Capture Filters (Sanitized)
 $searchTerm = isset($_GET['search']) ? mysqli_real_escape_string($conn, $_GET['search']) : '';
 $filterType = isset($_GET['type']) ? mysqli_real_escape_string($conn, $_GET['type']) : '';
 $filterCountry = isset($_GET['country']) ? mysqli_real_escape_string($conn, $_GET['country']) : '';
 
-// 2. Define Popular Places for Dropdown
-$popularCountries = ['Cambodia', 'Thailand', 'Vietnam', 'Japan', 'France', 'USA'];
-
-// 3. Build Query with Multi-Field Location Search
-$query = "SELECT spot.*, address.country, address.province, address.district, address.street 
-          FROM spot 
-          JOIN address ON spot.addressID = address.addressID 
+// 3. Dynamic Query Building
+$query = "SELECT s.*, a.country, a.province, a.district, a.street 
+          FROM spot s 
+          INNER JOIN address a ON s.addressID = a.addressID 
           WHERE 1=1";
 
 if (!empty($searchTerm)) {
-    $query .= " AND (spot.name LIKE '%$searchTerm%' 
-                OR address.country LIKE '%$searchTerm%' 
-                OR address.province LIKE '%$searchTerm%' 
-                OR address.district LIKE '%$searchTerm%' 
-                OR address.street LIKE '%$searchTerm%')";
+    $query .= " AND (s.name LIKE '%$searchTerm%' 
+                OR a.country LIKE '%$searchTerm%' 
+                OR a.province LIKE '%$searchTerm%' 
+                OR a.district LIKE '%$searchTerm%' 
+                OR a.street LIKE '%$searchTerm%')";
 }
 
-// Ensure filter matches the 'type' column exactly
 if (!empty($filterType)) {
-    $query .= " AND spot.type = '$filterType'";
+    $query .= " AND s.type = '$filterType'";
 }
 
 if (!empty($filterCountry)) {
-    $query .= " AND address.country = '$filterCountry'";
+    $query .= " AND a.country = '$filterCountry'";
 }
 
 $result = mysqli_query($conn, $query);
@@ -104,7 +112,7 @@ $spots = mysqli_fetch_all($result, MYSQLI_ASSOC);
                                 <i class="bi bi-speedometer2 text-lg"></i> Dashboard
                             </a>
                             <hr class="my-1 border-slate-50">
-                            <a href="../profile/login/logout.php" class="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 transition">
+                            <a href="../profile/login/index.php" class="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 transition">
                                 <i class="bi bi-box-arrow-right text-lg"></i> Logout
                             </a>
                         </div>
@@ -152,54 +160,73 @@ $spots = mysqli_fetch_all($result, MYSQLI_ASSOC);
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-6 py-12">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            <?php if (count($spots) > 0): ?>
-                <?php foreach ($spots as $spot): 
-                    $img = (filter_var($spot['photo'], FILTER_VALIDATE_URL)) ? $spot['photo'] : "uploads/" . $spot['photo'];
-                    $isAvailable = (strtolower($spot['status']) == 'available');
-                ?>
-                <div class="bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 group flex flex-col">
-                    <div class="relative h-64 overflow-hidden">
-                        <img src="<?= $img ?>" class="w-full h-full object-cover group-hover:scale-110 transition duration-700">
-                        <div class="absolute bottom-5 left-5">
-                            <span class="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest <?= $isAvailable ? 'bg-green-500 text-white' : 'bg-red-500 text-white' ?>">
-                                <i class="bi <?= $isAvailable ? 'bi-check-circle-fill' : 'bi-x-circle-fill' ?>"></i>
-                                <?= $spot['status'] ?>
-                            </span>
-                        </div>
-                    </div>
+<main class="max-w-7xl mx-auto px-6 py-12">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+        <?php if (!empty($spots)): ?>
+            <?php foreach ($spots as $spot): 
+               $img = (filter_var($spot['photo'], FILTER_VALIDATE_URL)) 
+        ? $spot['photo'] 
+        : "../database/imgs/" . $spot['photo'];
+
+                $isAvailable = (strcasecmp($spot['status'], 'available') == 0);
+            ?>
+            <div class="bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 group flex flex-col hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-500">
+                <div class="relative h-64 overflow-hidden">
+                    <img src="<?= htmlspecialchars($img) ?>" 
+                         alt="<?= htmlspecialchars($spot['name']) ?>" 
+                         class="w-full h-full object-cover group-hover:scale-110 transition duration-700">
                     
-                    <div class="p-8 flex-1 flex flex-col">
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2"><?= htmlspecialchars($spot['province']) ?>, <?= htmlspecialchars($spot['country']) ?></p>
-                        <h3 class="text-xl font-extrabold text-slate-900 mb-2"><?= htmlspecialchars($spot['name']) ?></h3>
-                        <p class="text-xs text-slate-400 mb-6 line-clamp-1"><?= htmlspecialchars($spot['street']) ?>, <?= htmlspecialchars($spot['district']) ?></p>
-                        
-                        <div class="mt-auto pt-6 border-t border-slate-50 flex justify-between items-center">
-                            <div>
-                                <p class="text-[9px] font-bold text-slate-300 uppercase">Rate</p>
-                                <span class="text-2xl font-black text-slate-900">$<?= number_format($spot['price'], 2) ?></span>
-                            </div>
-                            <?php if($isAvailable): ?>
-                                <a href="productDetail.php?id=<?= $spot['spotID'] ?>" class="bg-brand text-white px-8 py-3 rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-blue-600 transition shadow-lg shadow-blue-100">
-                                    View Details
-                                </a>
-                            <?php else: ?>
-                                <button disabled class="bg-slate-100 text-slate-400 px-8 py-3 rounded-2xl font-black text-[11px] uppercase tracking-widest cursor-not-allowed">
-                                    Unavailable
-                                </button>
-                            <?php endif; ?>
-                        </div>
+                    <div class="absolute bottom-5 left-5">
+                        <span class="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest <?= $isAvailable ? 'bg-green-500 text-white' : 'bg-red-500 text-white' ?> shadow-lg">
+                            <i class="bi <?= $isAvailable ? 'bi-check-circle-fill' : 'bi-x-circle-fill' ?>"></i>
+                            <?= htmlspecialchars($spot['status']) ?>
+                        </span>
                     </div>
                 </div>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <div class="col-span-full py-20 text-center">
-                    <p class="text-slate-400 font-bold uppercase tracking-widest">No spots match your search</p>
+                
+                <div class="p-8 flex-1 flex flex-col">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                        <?= htmlspecialchars($spot['province'] ?? '') ?>, <?= htmlspecialchars($spot['country'] ?? '') ?>
+                    </p>
+                    
+                    <h3 class="text-xl font-extrabold text-slate-900 mb-2 line-clamp-1">
+                        <?= htmlspecialchars($spot['name']) ?>
+                    </h3>
+                    
+                    <p class="text-xs text-slate-400 mb-6 line-clamp-1">
+                        <i class="bi bi-geo-alt mr-1"></i>
+                        <?= htmlspecialchars($spot['street']) ?>, <?= htmlspecialchars($spot['district']) ?>
+                    </p>
+                    
+                    <div class="mt-auto pt-6 border-t border-slate-50 flex justify-between items-center">
+                        <div>
+                            <p class="text-[9px] font-bold text-slate-300 uppercase">Rate / Night</p>
+                            <span class="text-2xl font-black text-slate-900">$<?= number_format($spot['price'], 2) ?></span>
+                        </div>
+                        
+                        <?php if($isAvailable): ?>
+                            <a href="productDetail.php?id=<?= (int)$spot['spotID'] ?>" 
+                               class="bg-blue-600 text-white px-8 py-3 rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200">
+                                View Details
+                            </a>
+                        <?php else: ?>
+                            <button disabled class="bg-slate-100 text-slate-400 px-8 py-3 rounded-2xl font-black text-[11px] uppercase tracking-widest cursor-not-allowed">
+                                Fully Booked
+                            </button>
+                        <?php endif; ?>
+                    </div>
                 </div>
-            <?php endif; ?>
-        </div>
-    </main>
+            </div>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <div class="col-span-full py-20 text-center bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-200">
+                <i class="bi bi-search text-4xl text-slate-200 mb-4 block"></i>
+                <p class="text-slate-400 font-bold uppercase tracking-widest">No spots match your search</p>
+                <a href="?" class="text-blue-600 text-xs font-black uppercase mt-4 inline-block underline">Clear Filters</a>
+            </div>
+        <?php endif; ?>
+    </div>
+</main>
 
 </body>
 </html>

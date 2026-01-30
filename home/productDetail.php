@@ -59,7 +59,7 @@ if (isset($_GET['id'])) {
 
 // Image handling logic
 $photo = $spot['photo'];
-$imageSrc = (filter_var($photo, FILTER_VALIDATE_URL)) ? $photo : "uploads/" . htmlspecialchars($photo);
+$imageSrc = (filter_var($photo, FILTER_VALIDATE_URL)) ? $photo : "../database/imgs/" . htmlspecialchars($photo);
 
 // Availability Status Logic
 $status = htmlspecialchars($spot['status'] ?? 'Available');

@@ -1,74 +1,90 @@
 <?php
 session_start();
-// 1. Database Connection
 require_once '../admin/config.php';
 
-// 2. SECURITY CHECK: Ensure user is logged in and cart isn't empty
-if (!isset($_SESSION['accountID']) || empty($_SESSION['cart'])) {
-    header("Location: ../profile/login/index.php?error=session_expired");
+// Initialize variables for the UI
+$order_processed = false;
+$order_id = "";
+$error_message = "";
+
+// 1. Pre-Flight Checks
+if (!isset($_SESSION['accountID'])) {
+    header("Location: ../login/index.php"); // Redirect to login if not logged in
     exit();
 }
 
-$accountID = $_SESSION['accountID'];
-$order_processed = false;
-$order_id = "BM-" . strtoupper(uniqid()); // Generate a unique reference ID
+// Only process if the cart isn't empty
+if (!empty($_SESSION['cart'])) {
+    $accountID = $_SESSION['accountID'];
+    $purchaseDate = date('Y-m-d H:i:s');
 
-// 3. DATABASE LOGIC: Process the 'booking' table insertion
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $conn->begin_transaction(); // Use transaction for data integrity
+    // 2. Start Database Transaction
+    $conn->begin_transaction();
 
     try {
-        // FETCH PAYMENT ID: Link accountID to userID to find the correct paymentID
+        // 3. Retrieve Payment ID
         $payQuery = "SELECT p.paymentID FROM paymentInfo p
-                     JOIN userinfo u ON p.userID = u.userID 
-                     WHERE u.accountID = ?";
+                     INNER JOIN userinfo u ON p.userID = u.userID 
+                     WHERE u.accountID = ? LIMIT 1";
         
         $payStmt = $conn->prepare($payQuery);
         $payStmt->bind_param("i", $accountID);
         $payStmt->execute();
-        $payResult = $payStmt->get_result();
-        $payData = $payResult->fetch_assoc();
-        
-        $paymentID = $payData['paymentID'] ?? null; 
-        
-        if (!$paymentID) {
-            throw new Exception("Payment method not found. Please update your billing info in the dashboard.");
+        $payRes = $payStmt->get_result();
+        $payData = $payRes->fetch_assoc();
+
+        if (!$payData) {
+            throw new Exception("Missing billing information. Please update your profile.");
         }
+        $paymentID = $payData['paymentID'];
 
-        $purchaseDate = date('Y-m-d');
+        // 4. Prepare the Insertion Query
+        $insertSQL = "INSERT INTO booking (accountID, spotID, paymentID, purchaseDate, checkinDate, checkoutDate, unit, totalPrice) 
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        $stmt = $conn->prepare($insertSQL);
 
-        // Loop through cart items and insert into booking table
+        // 5. Loop through Cart and Execute
         foreach ($_SESSION['cart'] as $spotID => $item) {
-            // FIX: Ensure keys match productDetail.php ('quantity' and 'checkinDate')
-            $checkin = $item['checkinDate'];
-            $checkout = $item['checkoutDate'];
-            $unit = (int)$item['quantity'];
+            $qty = (int)$item['quantity'];
+            $cleanPrice = (float)str_replace(['$', ','], '', $item['price']);
+            $subtotal = $cleanPrice * $qty;
             
-            // FIX: Remove currency symbols and commas before calculation to prevent $0.00 total
-            $cleanPrice = str_replace(['$', ','], '', $item['price']);
-            $totalPrice = (float)$cleanPrice * $unit;
+            $checkin = date('Y-m-d', strtotime($item['checkinDate']));
+            $checkout = date('Y-m-d', strtotime($item['checkoutDate']));
 
-            // Updated SQL to include checkoutDate as per the tripBookingPOS.sql schema
-            $insertSQL = "INSERT INTO booking (accountID, spotID, paymentID, purchaseDate, checkinDate, checkoutDate, unit, totalPrice) 
-                          VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-            
-            $stmt = $conn->prepare($insertSQL);
-            // "d" is used for the decimal totalPrice parameter
-            $stmt->bind_param("iiisssid", $accountID, $spotID, $paymentID, $purchaseDate, $checkin, $checkout, $unit, $totalPrice);
-            
+            $stmt->bind_param("iiisssid", 
+                $accountID, 
+                $spotID, 
+                $paymentID, 
+                $purchaseDate, 
+                $checkin, 
+                $checkout, 
+                $qty, 
+                $subtotal
+            );
+
             if (!$stmt->execute()) {
-                throw new Exception("Failed to record booking for spot ID: $spotID");
+                throw new Exception("Error processing item: " . $item['name']);
             }
         }
 
-        // Commit transaction and clear cart
+        // 6. Finalize
         $conn->commit();
-        unset($_SESSION['cart']);
+        unset($_SESSION['cart']); // Clear cart
+        
         $order_processed = true;
+        $order_id = uniqid('BM-');
 
     } catch (Exception $e) {
         $conn->rollback();
+        $order_processed = false;
         $error_message = $e->getMessage();
+    }
+} else {
+    // If cart is empty and not already processed, send back
+    if (!$order_processed) {
+        header("Location: checkOut.php?error=empty_cart");
+        exit();
     }
 }
 ?>

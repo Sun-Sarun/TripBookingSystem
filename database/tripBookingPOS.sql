@@ -4,9 +4,9 @@ START TRANSACTION;
 -- 1. Account Table
 CREATE TABLE `account` (
   `accountID` int(20) NOT NULL AUTO_INCREMENT,
-  `email` varchar(50) UNIQUE NULL, -- Increased length for emails
-  `password` varchar(255) NULL,   -- Increased for hashed passwords
-  `permission` varchar(20) NULL,
+  `email` varchar(100) UNIQUE NOT NULL, 
+  `password` varchar(255) NOT NULL,   
+  `permission` varchar(20) DEFAULT 'user',
   PRIMARY KEY (`accountID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -26,12 +26,12 @@ CREATE TABLE `spot` (
   `spotID` int(20) NOT NULL AUTO_INCREMENT,
   `name` varchar(100) NULL,
   `type` varchar(20) NULL,
-  `status` varchar(20) NULL, -- Fixed quotes
+  `status` varchar(20) NULL,
   `phone` varchar(20) NULL,
   `addressID` int(20) NOT NULL,
   `detail` varchar(200) NULL,
-  `price` decimal(10,2) NULL, -- Changed to Decimal for currency
-  `discount` decimal(10,2) NULL, -- Fixed quotes and space
+  `price` decimal(10,2) NULL,
+  `discount` decimal(10,2) DEFAULT 0.00,
   `photo` varchar(200) NULL,
   PRIMARY KEY (`spotID`),
   CONSTRAINT `fk_spot_address` FOREIGN KEY (`addressID`) REFERENCES `address` (`addressID`) ON DELETE CASCADE
@@ -46,11 +46,11 @@ CREATE TABLE `userinfo` (
   `gender` varchar(20) NULL,
   `DOB` date NULL,
   `phone` varchar(20) NULL,
-  `email` varchar(100) NULL,
-  `createdDate` date NULL,
+  -- Removed redundant email here since it's in the Account table
+  `createdDate` timestamp DEFAULT CURRENT_TIMESTAMP,
   `profile` varchar(200) NULL,
   `address` varchar(100) NULL,
-  PRIMARY KEY (`userID`), -- Removed PaymentID redundancy
+  PRIMARY KEY (`userID`),
   CONSTRAINT `fk_user_account` FOREIGN KEY (`accountID`) REFERENCES `account` (`accountID`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -61,7 +61,7 @@ CREATE TABLE `paymentInfo` (
   `paymentType` varchar(20) NULL,
   `cardCode` varchar(50) NULL,
   `expireDate` date NULL,
-  `cvv` varchar(20) NULL,
+  -- CVV removed for security/PCI compliance
   PRIMARY KEY (`paymentID`),
   CONSTRAINT `fk_payment_user` FOREIGN KEY (`userID`) REFERENCES `userinfo` (`userID`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -71,16 +71,17 @@ CREATE TABLE `booking` (
   `bookingID` int(20) NOT NULL AUTO_INCREMENT,
   `accountID` int(20) NOT NULL,
   `spotID` int(20) NOT NULL,
-  `purchaseDate` date NULL,
-  `unit` int(20) NULL,
-  `paymentID` int(20) NOT NULL, -- Matched data type with paymentInfo
+  `purchaseDate` timestamp DEFAULT CURRENT_TIMESTAMP,
+  `unit` int(20) DEFAULT 1,
+  `paymentID` int(20) NOT NULL,
   `checkinDate` date NULL,
   `checkoutDate` date NULL,
-  `totalPrice` decimal(10,2) NOT NULL, -- Fixed quotes and type
+  `totalPrice` decimal(10,2) NOT NULL,
   PRIMARY KEY (`bookingID`),
   CONSTRAINT `fk_booking_account` FOREIGN KEY (`accountID`) REFERENCES `account` (`accountID`) ON DELETE CASCADE,
   CONSTRAINT `fk_booking_spot` FOREIGN KEY (`spotID`) REFERENCES `spot` (`spotID`) ON DELETE CASCADE,
-  CONSTRAINT `fk_booking_payment` FOREIGN KEY (`paymentID`) REFERENCES `paymentInfo` (`paymentID`)
+  -- ADDED ON DELETE CASCADE HERE TO FIX YOUR PHP ERROR
+  CONSTRAINT `fk_booking_payment` FOREIGN KEY (`paymentID`) REFERENCES `paymentInfo` (`paymentID`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 COMMIT;

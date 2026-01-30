@@ -14,7 +14,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($check_stmt->get_result()->num_rows > 0) {
         $error_msg = "This email is already registered.";
     } else {
-        $stmt = $conn->prepare("INSERT INTO account (email, password) VALUES (?, ?)");
+        $stmt = $conn->prepare("INSERT INTO account (email, password, permission) VALUES (?, ?,'user')");
         $stmt->bind_param("ss", $email, $password);
         if ($stmt->execute()) {
             $_SESSION['user_email'] = $email; // Store email for the next page
