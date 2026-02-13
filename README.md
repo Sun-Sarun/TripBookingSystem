@@ -25,12 +25,12 @@ Launch the XAMPP Control Panel and start the **Apache** and **MySQL** modules.
 1. Select the `tripBookingPOS` database in phpMyAdmin.
 2. Navigate to the **Import** tab.
 3. Choose the SQL file located at: 
-   `.../htdocs/tripBookingPOS/database/data/tripBookingPOS.sql`
+   `.../htdocs/Booking-Master/database/data/tripBookingPOS.sql`
 4. Click **Go** to execute the import.
 
 ### **Step 5: Launch Application**
 Access the system by visiting:
-👉 **[http://localhost/tripBookingPOS/home/index.php](http://localhost/tripBookingPOS/home/index.php)**
+👉 **[http://localhost/tripBookingPOS/home/index.php](http://localhost/Booking-Master/home/index.php)**
 
 ---
 
