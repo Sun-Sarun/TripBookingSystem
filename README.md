@@ -30,7 +30,7 @@ Launch the XAMPP Control Panel and start the **Apache** and **MySQL** modules.
 
 ### **Step 5: Launch Application**
 Access the system by visiting:
-👉 **[http://localhost/tripBookingPOS/home/index.php](http://localhost/Booking-Master/home/index.php)**
+👉 **[http://localhost/Booking-Master/home/index.php](http://localhost/Booking-Master/home/index.php)**
 
 ---
 
