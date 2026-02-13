@@ -204,10 +204,10 @@ $allSpots = mysqli_query($conn, "SELECT s.*, a.country, a.province, a.district, 
                     <i class="bi bi-collection-play-fill"></i> Manage Product
                 </button>
             </nav>
-            <a href="../../home/index.php" class="text-slate-400 font-bold flex items-center gap-4 px-5 py-3.5 hover:bg-white/5 hover:text-white rounded-2xl transition-all">
+            <a href="../home/" class="text-slate-400 font-bold flex items-center gap-4 px-5 py-3.5 hover:bg-white/5 hover:text-white rounded-2xl transition-all">
                 <i class="bi bi-house-door-fill"></i> Return Home
             </a>
-            <a href="../../profile/logout/index.php" class="text-red-400 font-bold flex items-center gap-4 px-5 py-3 hover:bg-red-500/10 rounded-xl">
+            <a href="../profile/login/index.php" class="text-red-400 font-bold flex items-center gap-4 px-5 py-3 hover:bg-red-500/10 rounded-xl">
                 <i class="bi bi-power"></i> Logout
             </a>
         </aside>
