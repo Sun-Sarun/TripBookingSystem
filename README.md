@@ -1,33 +1,55 @@
-# TripBookingSystem
-## Set Up System
-### Step 1
-<p>Install [Xampp](https://www.apachefriends.org/download.html)</br>
-after install Xampp, move to Xampp dirctory's /lampp/htdoc/ the clone the project.</p>
+# ✈️ TripBookingSystem
+
+A streamlined solution for managing travel and bookings, built with PHP and MySQL.
+
 ---
-### Step 2
-Execute Xampp then start apache and mysql servers.
+
+## 🛠️ System Setup
+
+Follow these steps to get the environment running on your local machine.
+
+### **Step 1: Environment & Installation**
+1. Download and install **[XAMPP](https://www.apachefriends.org/download.html)**.
+2. Clone this repository into your XAMPP web root directory:
+   * **Linux:** `/opt/lampp/htdocs/`
+   * **Windows:** `C:\xampp\htdocs\`
+
+### **Step 2: Start Services**
+Launch the XAMPP Control Panel and start the **Apache** and **MySQL** modules.
+
+### **Step 3: Database Configuration**
+1. Open your browser and go to **[phpMyAdmin](http://localhost/phpmyadmin/)**.
+2. Create a new database named: `tripBookingPOS`.
+
+### **Step 4: Import Data**
+1. Select the `tripBookingPOS` database in phpMyAdmin.
+2. Navigate to the **Import** tab.
+3. Choose the SQL file located at: 
+   `.../htdocs/tripBookingPOS/database/data/tripBookingPOS.sql`
+4. Click **Go** to execute the import.
+
+### **Step 5: Launch Application**
+Access the system by visiting:
+👉 **[http://localhost/tripBookingPOS/home/index.php](http://localhost/tripBookingPOS/home/index.php)**
+
 ---
-### Step 3
-Open you favor Broswer to create database -> [create-mysql-database](http://localhost/phpmyadmin/index.php?route=/table/create&db=tripBookingPOS)</br>
+
+## 🏗️ Design & References
+
+### **Database Design**
+Inspired by the architecture detailed in:
+* [How to Develop an Online Event Booking System (PHP & MySQL)](https://dev.to/rakeebmkhan/how-to-develop-an-online-event-booking-system-using-php-mysql-3b4p)
+
+### **Project Inspiration**
+* [Trip.com](https://www.trip.com/)
+* [Booking.com](https://www.booking.com/)
+
 ---
-### Step 4
-Import database and data structure ->[mysql-import-to-database](http://localhost/phpmyadmin/index.php?route=/database/import&db=tripBookingPOS)</br>
-then select file: /lampp/htdocs/tripBookingPOS/database/data/tripBookingPOS.sql
----
-### Step 5
-Open [localhost](https://localhost/tripBookingPOS/home/index.php)
----
-## Database desing reference:
-[How to Develop an Online Event Booking System Using PHP & MySQL ](https://dev.to/rakeebmkhan/how-to-develop-an-online-event-booking-system-using-php-mysql-3b4p)
----
-## Project reference:
-[Trip.com](https://www.trip.com/)</br>
-[Booking.com](https://www.booking.com/)
-## Used Themplate
-### Landing Page
-[Restaurant – Free Tailwind CSS Restaurant Website Template](https://themewagon.com/themes/restaurant-tailwind/)
-### Login Form
-[Neumorphism Login Form](https://github.com/puikinsh/login-forms/tree/main/forms/neumorphism)
-### Admin Dashboard
-[Davidgrzyb - Tailwind Admin Template](https://github.com/davidgrzyb/tailwind-admin-template)
----
+
+## 🎨 Templates Used
+
+| Component | Template Source |
+| :--- | :--- |
+| **Landing Page** | [Restaurant – Free Tailwind CSS](https://themewagon.com/themes/restaurant-tailwind/) |
+| **Login Form** | [Neumorphism Login Form](https://github.com/puikinsh/login-forms/tree/main/forms/neumorphism) |
+| **Admin Dashboard** | [Davidgrzyb Tailwind Admin](https://github.com/davidgrzyb/tailwind-admin-template) |
