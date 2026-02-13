@@ -1,8 +1,8 @@
 # TripBookingSystem
 ## Set Up System
 ### Step 1
-Install [Xampp](https://www.apachefriends.org/download.html)</br>
-after install Xampp, move to Xampp dirctory's /lampp/htdoc/ the clone the project.
+<p>Install [Xampp](https://www.apachefriends.org/download.html)</br>
+after install Xampp, move to Xampp dirctory's /lampp/htdoc/ the clone the project.</p>
 ---
 ### Step 2
 Execute Xampp then start apache and mysql servers.
